@@ -6,18 +6,18 @@ import GrassTop from "../../assets/texture/grass/top.jpeg";
 import GrassSide from "../../assets/texture/grass/side.jpeg";
 import { Block } from "../components/Block";
 
-export const generateBlocks = (scene, camera) => {
-  const loader = new THREE.TextureLoader();
-  const materialArray = [
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassTop) }),
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassBottom) }),
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
-    new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) })
-  ];
+const loader = new THREE.TextureLoader();
+const materialArray = [
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassTop) }),
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassBottom) }),
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) }),
+  new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) })
+];
 
-  var chunks = [];
+export const generateInitialChunks = (scene, camera) => {
+  const chunks = [];
   let xOff = 0;
   let zOff = 0;
   const inc = 0.05;
@@ -54,6 +54,49 @@ export const generateBlocks = (scene, camera) => {
 
   return chunks;
 };
+
+export const generateNewChunks = (chunks) => {
+  let xOff = 0;
+  let zOff = 0;
+
+  const inc = 0.05;
+  const amplitude = 50;
+  const renderDistance = 3;
+  const chunkSize = 10;
+
+  const lowestX = lowestXBlock(chunks);
+  const lowestZ = lowestXBlock(chunks);
+};
+
+// generateChunk = (initialX, lengthX, modifierX, initialZ, lengthZ, modifierZ,) => {
+//   let xOff = 0;
+//   let zOff = 0;
+//   const inc = 0.05;
+//   const amplitude = 50;
+//   const renderDistance = 3;
+//   const chunkSize = 10;
+//   const chunk = []
+
+//   for (let x = i * chunkSize; x < i * chunkSize + chunkSize; x++) {
+//     for (let z = j * chunkSize; z < j * chunkSize + chunkSize; z++) {
+//       xOff = inc * x;
+//       zOff = inc * z;
+//       const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+//       chunk.push(new Block(x * 5, v, z * 5, scene, materialArray));
+//     }
+//   }
+// };
+
+// export const generateChunk = () => {
+//   for (let x = i * chunkSize; x < i * chunkSize + chunkSize; x++) {
+//     for (let z = j * chunkSize; z < j * chunkSize + chunkSize; z++) {
+//       xOff = inc * x;
+//       zOff = inc * z;
+//       const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+//       chunk.push(new Block(x * 5, v, z * 5, scene, materialArray));
+//     }
+//   }
+// };
 
 export const lowestXBlock = (blocks) => {
   var xPosArray = [];
@@ -92,5 +135,5 @@ export const highestZBlock = (blocks) => {
       zPosArray.push(block.z);
     });
   });
-  return Math.mimaxn.apply(null, zPosArray);
+  return Math.max.apply(null, zPosArray);
 };

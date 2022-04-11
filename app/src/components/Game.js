@@ -1,10 +1,21 @@
 import * as THREE from "three";
 import { noise } from "perlin";
 
-import { generateBlocks } from "../utils/generateBlocks";
+import { generateInitialChunks } from "../utils/generateChunks";
+import { Block } from "../components/Block";
+
+import GrassBottom from "../../assets/texture/grass/bottom.jpeg";
+import GrassTop from "../../assets/texture/grass/top.jpeg";
+import GrassSide from "../../assets/texture/grass/side.jpeg";
 
 import { Controls } from "./Controls";
-import { lowestZBlock } from "../utils/generateBlocks";
+import {
+  lowestXBlock,
+  lowestZBlock,
+  highestZBlock,
+  highestXBlock
+} from "../utils/generateChunks";
+
 export class Game {
   constructor() {
     this.scene = new THREE.Scene();
@@ -12,6 +23,15 @@ export class Game {
     this.camera = null;
     this.controls = null;
     this.chunks = [];
+    this.loader = new THREE.TextureLoader();
+    this.materialArray = [
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassTop) }),
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassBottom) }),
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
+      new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) })
+    ];
   }
 
   setup() {
@@ -30,7 +50,7 @@ export class Game {
     this.controls = new Controls(this.camera);
     this.controls.setup();
 
-    this.chunks = generateBlocks(this.scene, this.camera);
+    this.chunks = generateInitialChunks(this.scene, this.camera);
 
     window.addEventListener("resize", () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -59,30 +79,7 @@ export class Game {
         }
       });
     });
-    if (this.camera.position.z <= lowestZBlock(this.chunks) + 15) {
-      // remove blocks
-      console.log("HELO is this working");
-
-      this.chunks.forEach((blockArray, index) => {
-        if ((index + 1) % 3 === 0) {
-          console.log("remove");
-          blockArray.forEach((block) => {
-            this.scene.remove(block.mesh);
-            this.scene.remove(block.line);
-          });
-        }
-      });
-
-      this.chunks.forEach((blockArray, index) => {
-        if ((index + 1) % 3 === 0) {
-          console.log("remove");
-          blockArray.forEach((block) => {
-            this.scene.remove(block.mesh);
-            this.scene.remove(block.line);
-          });
-        }
-      });
-    }
+    this.handleEdges();
   }
 
   update() {
@@ -99,6 +96,267 @@ export class Game {
     this.render();
     requestAnimationFrame(() => {
       this.gameLoop();
+    });
+  }
+
+  handleEdges() {
+    /*
+        [0], [3], [6],
+        [1], [4], [7],
+        [2], [5], [8]
+    */
+    if (this.camera.position.z <= lowestZBlock(this.chunks) + 15) {
+      this.handleBottomZEdge();
+    }
+    if (this.camera.position.z >= highestZBlock(this.chunks) - 15) {
+      this.handleTopZEdge();
+    }
+    if (this.camera.position.x <= lowestXBlock(this.chunks) + 15) {
+      this.handleBottomXEdge();
+    }
+    if (this.camera.position.x >= highestXBlock(this.chunks) - 15) {
+      this.handleTopXEdge();
+    }
+  }
+
+  handleBottomZEdge() {
+    // remove blocks
+    this.chunks.forEach((blockArray, index) => {
+      if ((index + 1) % 3 === 0) {
+        blockArray.forEach((block) => {
+          this.scene.remove(block.mesh);
+          this.scene.remove(block.line);
+        });
+      }
+    });
+
+    const newChunks = [];
+    this.chunks.forEach((blockArray, index) => {
+      if ((index + 1) % 3 !== 0) {
+        newChunks.push(blockArray);
+      }
+    });
+
+    let xOff = 0;
+    let zOff = 0;
+
+    const inc = 0.05;
+    const amplitude = 50;
+    const renderDistance = 3;
+    const chunkSize = 10;
+
+    const lowestX = lowestXBlock(this.chunks);
+    const lowestZ = lowestZBlock(this.chunks);
+
+    for (let i = 0; i < renderDistance; i++) {
+      const chunk = [];
+      for (
+        let x = lowestX + i * chunkSize * 5;
+        x < lowestX + i * chunkSize * 5 + chunkSize * 5;
+        x = x + 5
+      ) {
+        for (let z = lowestZ - chunkSize * 5; z < lowestZ; z = z + 5) {
+          xOff = (inc * x) / 5;
+          zOff = (inc * z) / 5;
+          const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+          chunk.push(new Block(x, v, z, this.scene, this.materialArray));
+        }
+      }
+      newChunks.splice(i * renderDistance, 0, chunk);
+    }
+
+    this.chunks = newChunks;
+
+    this.chunks.forEach((chunkArray, index) => {
+      if (index % renderDistance === 0) {
+        chunkArray.forEach((block) => {
+          block.display();
+        });
+      }
+    });
+  }
+  handleTopZEdge() {
+    // remove blocks
+    this.chunks.forEach((blockArray, index) => {
+      // i % render distance
+      if (index % 3 === 0) {
+        blockArray.forEach((block) => {
+          this.scene.remove(block.mesh);
+          this.scene.remove(block.line);
+        });
+      }
+    });
+
+    const newChunks = [];
+    this.chunks.forEach((blockArray, index) => {
+      if (index % 3 !== 0) {
+        newChunks.push(blockArray);
+      }
+    });
+
+    let xOff = 0;
+    let zOff = 0;
+
+    const inc = 0.05;
+    const amplitude = 50;
+    const renderDistance = 3;
+    const chunkSize = 10;
+
+    const lowestX = lowestXBlock(this.chunks);
+    const highestZ = highestZBlock(this.chunks);
+
+    for (let i = 0; i < renderDistance; i++) {
+      const chunk = [];
+      for (
+        let x = lowestX + i * chunkSize * 5;
+        x < lowestX + i * chunkSize * 5 + chunkSize * 5;
+        x = x + 5
+      ) {
+        for (
+          let z = highestZ + chunkSize / 2;
+          z < highestZ + 5 + chunkSize * 5;
+          z = z + 5
+        ) {
+          xOff = (inc * x) / 5;
+          zOff = (inc * z) / 5;
+          const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+          chunk.push(new Block(x, v, z, this.scene, this.materialArray));
+        }
+      }
+      newChunks.splice(i * renderDistance + 2, 0, chunk);
+    }
+
+    this.chunks = newChunks;
+
+    this.chunks.forEach((chunkArray, index) => {
+      if ((index + 1) % renderDistance === 0) {
+        chunkArray.forEach((block) => {
+          block.display();
+        });
+      }
+    });
+  }
+  handleBottomXEdge() {
+    // remove blocks
+    this.chunks.forEach((blockArray, index) => {
+      // i < render distance
+      if (index >= this.chunks.length - 3) {
+        blockArray.forEach((block) => {
+          this.scene.remove(block.mesh);
+          this.scene.remove(block.line);
+        });
+      }
+    });
+
+    const newChunks = [];
+    this.chunks.forEach((blockArray, index) => {
+      // render Distance
+      if (index < this.chunks.length - 3) {
+        newChunks.push(blockArray);
+      }
+    });
+
+    let xOff = 0;
+    let zOff = 0;
+
+    const inc = 0.05;
+    const amplitude = 50;
+    const renderDistance = 3;
+    const chunkSize = 10;
+
+    const lowestZ = lowestZBlock(this.chunks);
+    const lowestX = lowestXBlock(this.chunks);
+
+    for (let i = 0; i < renderDistance; i++) {
+      const chunk = [];
+      for (
+        let z = lowestZ + i * chunkSize * 5;
+        z < lowestZ + i * chunkSize * 5 + chunkSize * 5;
+        z = z + 5
+      ) {
+        for (let x = lowestX - chunkSize * 5; x < lowestX; x = x + 5) {
+          xOff = (inc * x) / 5;
+          zOff = (inc * z) / 5;
+          const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+          chunk.push(new Block(x, v, z, this.scene, this.materialArray));
+        }
+      }
+      newChunks.splice(i, 0, chunk);
+    }
+
+    this.chunks = newChunks;
+    console.log(this.chunks);
+
+    this.chunks.forEach((chunkArray, index) => {
+      if (index < 3) {
+        console.log("HERE");
+        chunkArray.forEach((block) => {
+          block.display();
+        });
+      }
+    });
+  }
+
+  handleTopXEdge() {
+    // remove blocks
+    this.chunks.forEach((blockArray, index) => {
+      // i < render distance
+      if (index < 3) {
+        blockArray.forEach((block) => {
+          this.scene.remove(block.mesh);
+          this.scene.remove(block.line);
+        });
+      }
+    });
+
+    const newChunks = [];
+    this.chunks.forEach((blockArray, index) => {
+      // render Distance
+      if (index >= 3) {
+        newChunks.push(blockArray);
+      }
+    });
+
+    let xOff = 0;
+    let zOff = 0;
+
+    const inc = 0.05;
+    const amplitude = 50;
+    const renderDistance = 3;
+    const chunkSize = 10;
+
+    const lowestZ = lowestZBlock(this.chunks);
+    const highestX = highestXBlock(this.chunks);
+
+    for (let i = 0; i < renderDistance; i++) {
+      const chunk = [];
+      for (
+        let z = lowestZ + i * chunkSize * 5;
+        z < lowestZ + i * chunkSize * 5 + chunkSize * 5;
+        z = z + 5
+      ) {
+        for (
+          let x = highestX + 5;
+          x < highestX + 5 + chunkSize * 5;
+          x = x + 5
+        ) {
+          xOff = (inc * x) / 5;
+          zOff = (inc * z) / 5;
+          const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
+          chunk.push(new Block(x, v, z, this.scene, this.materialArray));
+        }
+      }
+      newChunks.splice(this.chunks.length - (renderDistance - i), 0, chunk);
+    }
+
+    this.chunks = newChunks;
+
+    this.chunks.forEach((chunkArray, index) => {
+      if (index >= this.chunks.length - renderDistance) {
+        chunkArray.forEach((block) => {
+          block.display();
+        });
+      }
     });
   }
 }

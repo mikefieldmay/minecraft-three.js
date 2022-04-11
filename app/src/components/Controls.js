@@ -1,5 +1,4 @@
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
-import { lowestZBlock } from "../utils/generateBlocks";
 
 export class Controls {
   constructor(camera) {
@@ -32,7 +31,6 @@ export class Controls {
   };
 
   update = (chunks) => {
-    console.log(chunks);
     if (this.keys.includes("w")) {
       this.controls.moveForward(this.movingSpeed);
       chunks.forEach((items) => {
