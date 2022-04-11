@@ -31,6 +31,10 @@ export class Game {
     this.loader = new THREE.TextureLoader();
     this.instancedChunk = null;
     this.blockBox = null;
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2();
+    this.plane = null;
+
     this.materialArray = [
       new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
       new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
@@ -56,6 +60,9 @@ export class Game {
       0.1,
       1000
     );
+
+    this.pointer.x = 0.5 * 2 - 1;
+    this.pointer.x = -1 * 0.5 * 2 + 1;
 
     this.controls = new Controls(this.camera);
     this.controls.setup();
@@ -106,6 +113,89 @@ export class Game {
   }
 
   render() {
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const intersection = this.raycaster.intersectObject(this.instancedChunk);
+    if (intersection[0] && intersection[0].distance < 40) {
+      // console.log(intersection);
+      if (!this.scene.children.includes(this.plane)) {
+        var planeGeometry = new THREE.PlaneGeometry(5, 5);
+        var planeMesh = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          side: THREE.DoubleSide
+        });
+        planeMesh.transparent = true;
+        planeMesh.opacity = 0.5;
+        this.plane = new THREE.Mesh(planeGeometry, planeMesh);
+        this.scene.add(this.plane);
+      } else {
+        this.plane.visible = true;
+        const materialIndex = intersection[0].face.materialIndex;
+        const position = intersection[0].point;
+        console.log("WHAT ARE YOU?", materialIndex);
+        console.log("HELLo", position, materialIndex);
+
+        const inc = 0.1;
+        switch (materialIndex) {
+          // right
+          case 0:
+            this.plane.rotation.set(0, Math.PI / 2, 0);
+            this.plane.position.set(
+              position.x + inc,
+              Math.round(position.y / 5) * 5,
+              Math.round(position.z / 5) * 5
+            );
+            break;
+          // left
+          case 1:
+            this.plane.rotation.set(0, Math.PI / 2, 0);
+            this.plane.position.set(
+              position.x + inc,
+              Math.round(position.y / 5) * 5,
+              Math.round(position.z / 5) * 5
+            );
+            break;
+          // top
+          case 2:
+            console.log("IN HETE");
+            this.plane.rotation.set(Math.PI / 2, 0, 0);
+            this.plane.position.set(
+              Math.round(position.x / 5) * 5,
+              position.y + inc,
+              Math.round(position.z / 5) * 5
+            );
+            break;
+          // bottom
+          case 3:
+            this.plane.rotation.set(Math.PI / 2, 0, 0);
+            this.plane.position.set(
+              Math.round(position.y / 5) * 5,
+              position.y + inc,
+              Math.round(position.y / 5) * 5
+            );
+            break;
+          case 4:
+            this.plane.rotation.set(0, 0, 0);
+            this.plane.position.set(
+              Math.round(position.x / 5) * 5,
+              Math.round(position.y / 5) * 5,
+              position.z + inc
+            );
+            break;
+          case 5:
+            this.plane.rotation.set(0, 0, 0);
+            this.plane.position.set(
+              Math.round(position.x / 5) * 5,
+              Math.round(position.y / 5) * 5,
+              position.z + inc
+            );
+            break;
+        }
+      }
+    } else {
+      if (this.plane) {
+        this.plane.visible = false;
+      }
+    }
     this.renderer.render(this.scene, this.camera);
   }
 
