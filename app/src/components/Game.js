@@ -1,7 +1,11 @@
 import * as THREE from "three";
 import { noise } from "perlin";
+import Stats from "stats-js";
 
-import { generateInitialChunks } from "../utils/generateChunks";
+import {
+  generateInitialChunks,
+  createInstanceChunks
+} from "../utils/generateChunks";
 import { Block } from "../components/Block";
 
 import GrassBottom from "../../assets/texture/grass/bottom.jpeg";
@@ -18,12 +22,15 @@ import {
 
 export class Game {
   constructor() {
+    this.stats = new Stats();
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer();
     this.camera = null;
     this.controls = null;
     this.chunks = [];
     this.loader = new THREE.TextureLoader();
+    this.instancedChunk = null;
+    this.blockBox = null;
     this.materialArray = [
       new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
       new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
@@ -35,10 +42,13 @@ export class Game {
   }
 
   setup() {
+    this.stats.showPanel(0);
     this.scene.background = new THREE.Color(0x00ffff);
+    this.scene.fog = new THREE.Fog(0x000000, 10, 200);
     noise.seed(Math.random());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
+    document.body.appendChild(this.stats.dom);
 
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -50,7 +60,14 @@ export class Game {
     this.controls = new Controls(this.camera);
     this.controls.setup();
 
-    this.chunks = generateInitialChunks(this.scene, this.camera);
+    const { chunks, instancedChunk, blockBox } = generateInitialChunks(
+      this.scene,
+      this.camera
+    );
+
+    this.chunks = chunks;
+    this.instancedChunk = instancedChunk;
+    this.blockBox = blockBox;
 
     window.addEventListener("resize", () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -62,6 +79,7 @@ export class Game {
     toggleButton.onclick = () => {
       this.controls.autoJump = !this.controls.autoJump;
     };
+    this.animate();
   }
 
   checkCollisions() {
@@ -72,7 +90,7 @@ export class Game {
           this.controls.hasCollidedZ(item)
         ) {
           if (this.controls.hasCollidedY(item)) {
-            this.camera.position.y = item.y + item.height / 2;
+            this.camera.position.y = item.y + item.height * 2;
             this.controls.ySpeed = 0;
             this.controls.canJump = true;
           }
@@ -99,6 +117,14 @@ export class Game {
     });
   }
 
+  animate() {
+    this.stats.begin();
+    this.stats.end();
+    requestAnimationFrame(() => {
+      this.animate();
+    });
+  }
+
   handleEdges() {
     /*
         [0], [3], [6],
@@ -121,6 +147,8 @@ export class Game {
 
   handleBottomZEdge() {
     // remove blocks
+    this.scene.remove(this.instancedChunk);
+
     this.chunks.forEach((blockArray, index) => {
       if ((index + 1) % 3 === 0) {
         blockArray.forEach((block) => {
@@ -167,25 +195,13 @@ export class Game {
 
     this.chunks = newChunks;
 
-    this.chunks.forEach((chunkArray, index) => {
-      if (index % renderDistance === 0) {
-        chunkArray.forEach((block) => {
-          block.display();
-        });
-      }
-    });
+    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.scene.add(this.instancedChunk);
   }
+
   handleTopZEdge() {
     // remove blocks
-    this.chunks.forEach((blockArray, index) => {
-      // i % render distance
-      if (index % 3 === 0) {
-        blockArray.forEach((block) => {
-          this.scene.remove(block.mesh);
-          this.scene.remove(block.line);
-        });
-      }
-    });
+    this.scene.remove(this.instancedChunk);
 
     const newChunks = [];
     this.chunks.forEach((blockArray, index) => {
@@ -228,25 +244,12 @@ export class Game {
 
     this.chunks = newChunks;
 
-    this.chunks.forEach((chunkArray, index) => {
-      if ((index + 1) % renderDistance === 0) {
-        chunkArray.forEach((block) => {
-          block.display();
-        });
-      }
-    });
+    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.scene.add(this.instancedChunk);
   }
   handleBottomXEdge() {
     // remove blocks
-    this.chunks.forEach((blockArray, index) => {
-      // i < render distance
-      if (index >= this.chunks.length - 3) {
-        blockArray.forEach((block) => {
-          this.scene.remove(block.mesh);
-          this.scene.remove(block.line);
-        });
-      }
-    });
+    this.scene.remove(this.instancedChunk);
 
     const newChunks = [];
     this.chunks.forEach((blockArray, index) => {
@@ -285,29 +288,12 @@ export class Game {
     }
 
     this.chunks = newChunks;
-    console.log(this.chunks);
-
-    this.chunks.forEach((chunkArray, index) => {
-      if (index < 3) {
-        console.log("HERE");
-        chunkArray.forEach((block) => {
-          block.display();
-        });
-      }
-    });
+    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.scene.add(this.instancedChunk);
   }
-
   handleTopXEdge() {
     // remove blocks
-    this.chunks.forEach((blockArray, index) => {
-      // i < render distance
-      if (index < 3) {
-        blockArray.forEach((block) => {
-          this.scene.remove(block.mesh);
-          this.scene.remove(block.line);
-        });
-      }
-    });
+    this.scene.remove(this.instancedChunk);
 
     const newChunks = [];
     this.chunks.forEach((blockArray, index) => {
@@ -350,13 +336,7 @@ export class Game {
     }
 
     this.chunks = newChunks;
-
-    this.chunks.forEach((chunkArray, index) => {
-      if (index >= this.chunks.length - renderDistance) {
-        chunkArray.forEach((block) => {
-          block.display();
-        });
-      }
-    });
+    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.scene.add(this.instancedChunk);
   }
 }

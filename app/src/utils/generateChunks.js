@@ -16,6 +16,30 @@ const materialArray = [
   new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) })
 ];
 
+export const createInstanceChunks = (chunks, blockBox) => {
+  const renderDistance = 3;
+  const chunkSize = 10;
+  let count = 0;
+  const instancedChunk = new THREE.InstancedMesh(
+    blockBox,
+    materialArray,
+    chunkSize * chunkSize * renderDistance * renderDistance
+  );
+
+  chunks.forEach((chunk) => {
+    chunk.forEach((block) => {
+      let matrix = new THREE.Matrix4().makeTranslation(
+        block.x,
+        block.y,
+        block.z
+      );
+      instancedChunk.setMatrixAt(count, matrix);
+      count++;
+    });
+  });
+  return instancedChunk;
+};
+
 export const generateInitialChunks = (scene, camera) => {
   const chunks = [];
   let xOff = 0;
@@ -24,7 +48,6 @@ export const generateInitialChunks = (scene, camera) => {
   const amplitude = 50;
   const renderDistance = 3;
   const chunkSize = 10;
-
   camera.position.set(
     ((renderDistance * chunkSize) / 2) * 5,
     ((renderDistance * chunkSize) / 2) * 5,
@@ -46,57 +69,12 @@ export const generateInitialChunks = (scene, camera) => {
     }
   }
 
-  chunks.forEach((chunkArray) => {
-    chunkArray.forEach((chunk) => {
-      chunk.display();
-    });
-  });
+  var blockBox = new THREE.BoxGeometry(5, 5, 5);
+  var instancedChunk = createInstanceChunks(chunks, blockBox);
+  scene.add(instancedChunk);
 
-  return chunks;
+  return { chunks, instancedChunk, blockBox };
 };
-
-export const generateNewChunks = (chunks) => {
-  let xOff = 0;
-  let zOff = 0;
-
-  const inc = 0.05;
-  const amplitude = 50;
-  const renderDistance = 3;
-  const chunkSize = 10;
-
-  const lowestX = lowestXBlock(chunks);
-  const lowestZ = lowestXBlock(chunks);
-};
-
-// generateChunk = (initialX, lengthX, modifierX, initialZ, lengthZ, modifierZ,) => {
-//   let xOff = 0;
-//   let zOff = 0;
-//   const inc = 0.05;
-//   const amplitude = 50;
-//   const renderDistance = 3;
-//   const chunkSize = 10;
-//   const chunk = []
-
-//   for (let x = i * chunkSize; x < i * chunkSize + chunkSize; x++) {
-//     for (let z = j * chunkSize; z < j * chunkSize + chunkSize; z++) {
-//       xOff = inc * x;
-//       zOff = inc * z;
-//       const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
-//       chunk.push(new Block(x * 5, v, z * 5, scene, materialArray));
-//     }
-//   }
-// };
-
-// export const generateChunk = () => {
-//   for (let x = i * chunkSize; x < i * chunkSize + chunkSize; x++) {
-//     for (let z = j * chunkSize; z < j * chunkSize + chunkSize; z++) {
-//       xOff = inc * x;
-//       zOff = inc * z;
-//       const v = Math.round((noise.perlin2(xOff, zOff) * amplitude) / 5) * 5;
-//       chunk.push(new Block(x * 5, v, z * 5, scene, materialArray));
-//     }
-//   }
-// };
 
 export const lowestXBlock = (blocks) => {
   var xPosArray = [];

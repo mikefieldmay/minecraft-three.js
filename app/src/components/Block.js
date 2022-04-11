@@ -12,16 +12,71 @@ export class Block {
     this.materialArray = materialArray;
     this.mesh = null;
     this.line = null;
+    this.directions = [];
+    this.faces = [
+      {
+        dir: [-5, 0, 0, "left"]
+      },
+      {
+        dir: [5, 0, 0, "right"]
+      },
+      {
+        dir: [0, -5, 0, "bottom"]
+      },
+      {
+        dir: [0, 5, 0, "top"]
+      },
+      {
+        dir: [0, 0, -5, "back"]
+      },
+      {
+        dir: [0, 0, 5, "front"]
+      }
+    ];
   }
 
-  display = () => {
+  getVoxel(chunks, x, y, z) {
+    let neighbour = false;
+    // if there is a block adjacent to any of our blocks return true
+    chunks.forEach((chunk) => {
+      chunk.forEach((block) => {
+        if (block.x === x && block.y === y && block.z === z) {
+          neighbour = true;
+        }
+      });
+    });
+    return neighbour;
+  }
+
+  adjustFaces(chunks) {
+    this.faces.map(({ dir }) => {
+      const neighbour = this.getVoxel(
+        chunks,
+        this.x + dir[0],
+        this.y + dir[1],
+        this.z + dir[2]
+      );
+      if (neighbour) {
+        this.directions.push(dir[3]);
+      }
+    });
+  }
+
+  display = (chunks) => {
+    this.adjustFaces(chunks);
     const blockBox = new THREE.BoxBufferGeometry(
       this.width,
       this.height,
       this.depth
     );
-    const blockMesh = new THREE.MeshBasicMaterial({ color: "#96f97b" });
-    this.mesh = new THREE.Mesh(blockBox, this.materialArray || blockMesh);
+    this.mesh = new THREE.Mesh(blockBox, [
+      this.directions.includes("right") ? null : this.materialArray[0],
+      this.directions.includes("left") ? null : this.materialArray[1],
+      this.directions.includes("top") ? null : this.materialArray[2],
+      this.directions.includes("bottom") ? null : this.materialArray[3],
+      this.directions.includes("front") ? null : this.materialArray[4],
+      this.directions.includes("back") ? null : this.materialArray[5]
+    ]);
     this.scene.add(this.mesh);
     this.mesh.position.set(this.x, this.y - 10, this.z);
 

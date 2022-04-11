@@ -89,33 +89,7 @@ export class Controls {
     }
     this.camera.position.y -= this.ySpeed;
     this.ySpeed += this.acc;
-
-    // this.checkCollision(chunks);
   };
-
-  // checkCollision = (chunks) => {
-  //   chunks.forEach((blockArray) => {
-  //     blockArray.forEach((item) => {
-  //       if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
-  //         if (this.hasCollidedY(item)) {
-  //           this.camera.position.y = item.y + item.height / 2;
-  //           this.ySpeed = 0;
-  //           this.canJump = true;
-  //         }
-  //       }
-  //     });
-  //   });
-  //   if (this.camera.position.z <= lowestZBlock(chunks) + 15) {
-  //     // remove blocks
-  //     chunks.forEach((blockArray, index) => {
-  //       if (index + (1 % 3) === 0) {
-  //         blockArray.forEach((block) => {
-  //           this.scene;
-  //         });
-  //       }
-  //     });
-  //   }
-  // };
 
   hasCollidedX = (item) => {
     return (
@@ -125,8 +99,8 @@ export class Controls {
   };
   hasCollidedY = (item) => {
     return (
-      this.camera.position.y <= item.y + item.height / 2 &&
-      this.camera.position.y >= item.y - item.height / 2
+      this.camera.position.y <= item.y + item.height * 2 &&
+      this.camera.position.y >= item.y
     );
   };
   hasCollidedZ = (item) => {
