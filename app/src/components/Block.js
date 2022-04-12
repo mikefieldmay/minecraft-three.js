@@ -35,6 +35,10 @@ export class Block {
     ];
   }
 
+  getSize() {
+    return { x: this.width, y: this.height, z: this.depth };
+  }
+
   getVoxel(chunks, x, y, z) {
     let neighbour = false;
     // if there is a block adjacent to any of our blocks return true

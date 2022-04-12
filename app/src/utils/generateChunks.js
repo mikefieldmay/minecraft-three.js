@@ -19,10 +19,10 @@ const materialArray = [
 export const createInstanceChunks = (
   chunks,
   blockBox,
-  placedBlocksLength = 0
+  placedBlocksLength = 0,
+  renderDistance,
+  chunkSize
 ) => {
-  const renderDistance = 3;
-  const chunkSize = 10;
   let count = 0;
   const instancedChunk = new THREE.InstancedMesh(
     blockBox,
@@ -44,19 +44,16 @@ export const createInstanceChunks = (
   return instancedChunk;
 };
 
-export const generateInitialChunks = (scene, camera) => {
+export const generateInitialChunks = (
+  scene,
+  renderDistance,
+  chunkSize,
+  inc,
+  amplitude
+) => {
   const chunks = [];
   let xOff = 0;
   let zOff = 0;
-  const inc = 0.05;
-  const amplitude = 50;
-  const renderDistance = 3;
-  const chunkSize = 10;
-  camera.position.set(
-    ((renderDistance * chunkSize) / 2) * 5,
-    ((renderDistance * chunkSize) / 2) * 5,
-    50
-  );
 
   for (let i = 0; i < renderDistance; i++) {
     for (let j = 0; j < renderDistance; j++) {
@@ -72,9 +69,14 @@ export const generateInitialChunks = (scene, camera) => {
       chunks.push(chunk);
     }
   }
-
   var blockBox = new THREE.BoxGeometry(5, 5, 5);
-  var instancedChunk = createInstanceChunks(chunks, blockBox);
+  var instancedChunk = createInstanceChunks(
+    chunks,
+    blockBox,
+    0,
+    renderDistance,
+    chunkSize
+  );
   scene.add(instancedChunk);
 
   return { chunks, instancedChunk, blockBox };
