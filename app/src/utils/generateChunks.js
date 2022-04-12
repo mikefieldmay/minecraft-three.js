@@ -16,14 +16,18 @@ const materialArray = [
   new THREE.MeshBasicMaterial({ map: loader.load(GrassSide) })
 ];
 
-export const createInstanceChunks = (chunks, blockBox) => {
+export const createInstanceChunks = (
+  chunks,
+  blockBox,
+  placedBlocksLength = 0
+) => {
   const renderDistance = 3;
   const chunkSize = 10;
   let count = 0;
   const instancedChunk = new THREE.InstancedMesh(
     blockBox,
     materialArray,
-    chunkSize * chunkSize * renderDistance * renderDistance
+    chunkSize * chunkSize * renderDistance * renderDistance + placedBlocksLength
   );
 
   chunks.forEach((chunk) => {

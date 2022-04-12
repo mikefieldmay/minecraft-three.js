@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { noise } from "perlin";
 import Stats from "stats-js";
+import { identifyChunk } from "../utils/identifyChunk";
 
 import {
   generateInitialChunks,
@@ -34,6 +35,9 @@ export class Game {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.plane = null;
+    this.placedBlocks = [];
+    this.chunkMaps = [];
+    this.intersection = null;
 
     this.materialArray = [
       new THREE.MeshBasicMaterial({ map: this.loader.load(GrassSide) }),
@@ -108,15 +112,16 @@ export class Game {
   }
 
   update() {
-    this.controls.update(this.chunks);
+    this.controls.update(this.chunks, () => {
+      this.handleBlockPlace();
+    });
     this.checkCollisions();
   }
 
   render() {
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const intersection = this.raycaster.intersectObject(this.instancedChunk);
-    if (intersection[0] && intersection[0].distance < 40) {
-      // console.log(intersection);
+    this.intersection = this.raycaster.intersectObject(this.instancedChunk);
+    if (this.intersection[0] && this.intersection[0].distance < 40) {
       if (!this.scene.children.includes(this.plane)) {
         var planeGeometry = new THREE.PlaneGeometry(5, 5);
         var planeMesh = new THREE.MeshBasicMaterial({
@@ -129,10 +134,8 @@ export class Game {
         this.scene.add(this.plane);
       } else {
         this.plane.visible = true;
-        const materialIndex = intersection[0].face.materialIndex;
-        const position = intersection[0].point;
-        console.log("WHAT ARE YOU?", materialIndex);
-        console.log("HELLo", position, materialIndex);
+        const materialIndex = this.intersection[0].face.materialIndex;
+        const position = this.intersection[0].point;
 
         const inc = 0.1;
         switch (materialIndex) {
@@ -149,14 +152,13 @@ export class Game {
           case 1:
             this.plane.rotation.set(0, Math.PI / 2, 0);
             this.plane.position.set(
-              position.x + inc,
+              position.x - inc,
               Math.round(position.y / 5) * 5,
               Math.round(position.z / 5) * 5
             );
             break;
           // top
           case 2:
-            console.log("IN HETE");
             this.plane.rotation.set(Math.PI / 2, 0, 0);
             this.plane.position.set(
               Math.round(position.x / 5) * 5,
@@ -168,25 +170,27 @@ export class Game {
           case 3:
             this.plane.rotation.set(Math.PI / 2, 0, 0);
             this.plane.position.set(
-              Math.round(position.y / 5) * 5,
-              position.y + inc,
-              Math.round(position.y / 5) * 5
+              Math.round(position.x / 5) * 5,
+              position.y - inc,
+              Math.round(position.z / 5) * 5
             );
             break;
+          // back
           case 4:
-            this.plane.rotation.set(0, 0, 0);
+            this.plane.rotation.set(0, 0, Math.PI / 2);
             this.plane.position.set(
               Math.round(position.x / 5) * 5,
               Math.round(position.y / 5) * 5,
               position.z + inc
             );
             break;
+          // front
           case 5:
-            this.plane.rotation.set(0, 0, 0);
+            this.plane.rotation.set(0, 0, Math.PI / 2);
             this.plane.position.set(
               Math.round(position.x / 5) * 5,
               Math.round(position.y / 5) * 5,
-              position.z + inc
+              position.z - inc
             );
             break;
         }
@@ -232,6 +236,66 @@ export class Game {
     }
     if (this.camera.position.x >= highestXBlock(this.chunks) - 15) {
       this.handleTopXEdge();
+    }
+  }
+
+  handleBlockPlace() {
+    if (this.intersection[0] && this.intersection[0].distance < 40) {
+      const materialIndex = this.intersection[0].face.materialIndex;
+      const position = this.intersection[0].point;
+      let x = 0;
+      let y = 0;
+      let z = 0;
+      const inc = 2.5;
+      switch (materialIndex) {
+        // right
+        case 0:
+          x = position.x + inc;
+          y = Math.round(position.y / 5) * 5;
+          z = Math.round(position.z / 5) * 5;
+          break;
+        // left
+        case 1:
+          x = position.x - inc;
+          y = Math.round(position.y / 5) * 5;
+          z = Math.round(position.z / 5) * 5;
+
+          break;
+        // top
+        case 2:
+          x = Math.round(position.x / 5) * 5;
+          y = position.y + inc;
+          z = Math.round(position.z / 5) * 5;
+          break;
+        // bottom
+        case 3:
+          x = Math.round(position.x / 5) * 5;
+          y = position.y - inc;
+          z = Math.round(position.z / 5) * 5;
+          break;
+        case 4:
+          x = Math.round(position.x / 5) * 5;
+          y = Math.round(position.y / 5) * 5;
+          z = position.z + inc;
+          break;
+        case 5:
+          x = Math.round(position.x / 5) * 5;
+          y = Math.round(position.y / 5) * 5;
+          z = position.z - inc;
+          break;
+      }
+      const chunk = this.chunks[identifyChunk(this.chunks, x, z)];
+      chunk.push(new Block(x, y, z, this.scene));
+      this.placedBlocks.push(new Block(x, y, z, this.scene));
+
+      this.scene.remove(this.instancedChunk);
+
+      this.instancedChunk = createInstanceChunks(
+        this.chunks,
+        this.blockBox,
+        this.placedBlocks.length
+      );
+      this.scene.add(this.instancedChunk);
     }
   }
 
@@ -285,7 +349,11 @@ export class Game {
 
     this.chunks = newChunks;
 
-    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.instancedChunk = createInstanceChunks(
+      this.chunks,
+      this.blockBox,
+      this.placedBlocks.length
+    );
     this.scene.add(this.instancedChunk);
   }
 
@@ -334,7 +402,11 @@ export class Game {
 
     this.chunks = newChunks;
 
-    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.instancedChunk = createInstanceChunks(
+      this.chunks,
+      this.blockBox,
+      this.placedBlocks.length
+    );
     this.scene.add(this.instancedChunk);
   }
   handleBottomXEdge() {
@@ -378,7 +450,11 @@ export class Game {
     }
 
     this.chunks = newChunks;
-    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.instancedChunk = createInstanceChunks(
+      this.chunks,
+      this.blockBox,
+      this.placedBlocks.length
+    );
     this.scene.add(this.instancedChunk);
   }
   handleTopXEdge() {
@@ -426,7 +502,11 @@ export class Game {
     }
 
     this.chunks = newChunks;
-    this.instancedChunk = createInstanceChunks(this.chunks, this.blockBox);
+    this.instancedChunk = createInstanceChunks(
+      this.chunks,
+      this.blockBox,
+      this.placedBlocks.length
+    );
     this.scene.add(this.instancedChunk);
   }
 }

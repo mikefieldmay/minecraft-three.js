@@ -1,4 +1,7 @@
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
+import { identifyChunk } from "../utils/identifyChunk";
+import { createInstanceChunks } from "../utils/generateChunks";
+import { Block } from "./Block";
 
 export class Controls {
   constructor(camera) {
@@ -10,7 +13,16 @@ export class Controls {
     this.jumpSpeed = 1.3;
     this.acc = 0.08;
     this.canJump = true;
+    this.canPlaceBlock = true;
     this.autoJump = true;
+    this.controlOptions = {
+      forward: "w",
+      backward: "s",
+      right: "d",
+      left: "a",
+      jump: " ",
+      placeBlock: "q"
+    };
   }
 
   setup = () => {
@@ -20,7 +32,7 @@ export class Controls {
 
     window.addEventListener("keydown", (event) => {
       this.keys.push(event.key);
-      if (event.key == " " && this.canJump) {
+      if (event.key == this.controlOptions.jump && this.canJump) {
         this.ySpeed = -this.jumpSpeed;
         this.canJump = false;
       }
@@ -30,8 +42,8 @@ export class Controls {
     });
   };
 
-  update = (chunks) => {
-    if (this.keys.includes("w")) {
+  update = (chunks, blockPlacedCallback) => {
+    if (this.keys.includes(this.controlOptions.forward)) {
       this.controls.moveForward(this.movingSpeed);
       chunks.forEach((items) => {
         items.forEach((item) => {
@@ -45,7 +57,7 @@ export class Controls {
         });
       });
     }
-    if (this.keys.includes("a")) {
+    if (this.keys.includes(this.controlOptions.left)) {
       this.controls.moveRight(-1 * this.movingSpeed);
       chunks.forEach((items) => {
         items.forEach((item) => {
@@ -59,7 +71,7 @@ export class Controls {
         });
       });
     }
-    if (this.keys.includes("s")) {
+    if (this.keys.includes(this.controlOptions.backward)) {
       this.controls.moveForward(-1 * this.movingSpeed);
       chunks.forEach((items) => {
         items.forEach((item) => {
@@ -73,7 +85,7 @@ export class Controls {
         });
       });
     }
-    if (this.keys.includes("d")) {
+    if (this.keys.includes(this.controlOptions.right)) {
       this.controls.moveRight(this.movingSpeed);
       chunks.forEach((items) => {
         items.forEach((item) => {
@@ -86,6 +98,16 @@ export class Controls {
           }
         });
       });
+    }
+    if (this.keys.includes(this.controlOptions.placeBlock)) {
+      if (this.canPlaceBlock) {
+        this.canPlaceBlock = false;
+
+        blockPlacedCallback();
+        setTimeout(() => {
+          this.canPlaceBlock = true;
+        }, 250);
+      }
     }
     this.camera.position.y -= this.ySpeed;
     this.ySpeed += this.acc;
