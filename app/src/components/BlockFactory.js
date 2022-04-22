@@ -64,7 +64,6 @@ export class BlockFactory {
       this.renderDistance,
       this.chunkSize
     );
-    console.log(this.chunks);
 
     this.instancedChunk = instancedChunk;
     this.scene.add(instancedChunk);
@@ -274,7 +273,6 @@ export class BlockFactory {
       let y = 0;
       let z = 0;
       const inc = this.blockSize.x / 2;
-      console.log(materialIndex);
       switch (materialIndex) {
         // right
         case 0:
@@ -313,7 +311,6 @@ export class BlockFactory {
           break;
       }
 
-      console.log("cunty fuck shit", x, z);
       const chunk =
         this.chunks[
           identifyChunk(

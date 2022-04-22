@@ -8,18 +8,8 @@ export const identifyChunk = (
   blockSize,
   renderDistance
 ) => {
-  console.log(x, z);
   const diffX = x - lowestXBlock(chunks);
   const diffZ = z - lowestZBlock(chunks);
-  console.log(
-    "FUCKIN HELL",
-    "chunkSize",
-    chunkSize,
-    "blockSize",
-    blockSize,
-    diffX,
-    diffZ
-  );
 
   const divX = Math.floor(diffX / (chunkSize * blockSize));
   const divZ = Math.floor(diffZ / (chunkSize * blockSize));
@@ -30,7 +20,6 @@ export const identifyChunk = (
     }
   }
 
-  console.log(chunkMap, divX, divZ);
   let index;
   chunkMap.forEach(({ x, z }, i) => {
     if (x === divX && z === divZ) {

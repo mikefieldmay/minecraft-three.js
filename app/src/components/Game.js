@@ -70,8 +70,6 @@ export class Game {
 
     this.blockFactory.generateInitialChunks();
 
-    console.log(this.blockFactory.chunks);
-
     this.camera.position.set(
       ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) *
         5,
@@ -79,8 +77,6 @@ export class Game {
         5,
       ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) * 5
     );
-
-    console.log(this.camera.position);
 
     window.addEventListener("resize", () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
