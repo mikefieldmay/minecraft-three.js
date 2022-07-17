@@ -114,7 +114,6 @@ export class Controls {
   }
 
   moveRight(chunks) {
-    console.log("hello");
     this.controls.moveRight(this.movingSpeed);
     chunks.forEach((items) => {
       items.forEach((item) => {

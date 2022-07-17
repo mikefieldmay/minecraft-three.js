@@ -21,7 +21,6 @@ export class Dancer {
     this.jumpSpeed = 1.3;
     this.acc = 0.08;
     this.camera = camera;
-    console.log(x, y, z);
   }
 
   async loadGltfModel(src) {
@@ -54,7 +53,6 @@ export class Dancer {
 
   async loadDances() {
     const run = await this.loadGltfModel("public/animations/goofy-run.glb");
-    console.log("one");
     run.animations[0].tracks.shift();
     const runAnimation = this.mixer.clipAction(run.animations[0]);
     this.animationActions.push(runAnimation);
@@ -62,7 +60,6 @@ export class Dancer {
     const dance = await this.loadGltfModel("public/animations/dance.glb");
     const danceAnimation = this.mixer.clipAction(dance.animations[0]);
     this.animationActions.push(danceAnimation);
-    console.log("two");
 
     const idle = await this.loadGltfModel("public/animations/idle.glb");
     const idleAnimation = this.mixer.clipAction(idle.animations[0]);

@@ -132,8 +132,6 @@ export class Game {
           if (this.dancer.hasCollidedY(item)) {
             this.dancer.model.position.y = item.y + item.height / 2;
             this.dancer.ySpeed = 0;
-            // console.log("HERE", item, this.dancer.model.position);
-            // throw new Error();
           }
         }
         if (
@@ -154,7 +152,6 @@ export class Game {
   update() {
     this.inputHandler.update();
     this.controls.update(this.blockFactory.chunks);
-    console.log("IS THE DANCER READY", this.dancer.ready);
     if (this.dancer.ready) {
       // this.dancer.updatePosition(0, this.dancer.model.x - 1, 0);
       this.dancer.update(this.clock.getDelta());
