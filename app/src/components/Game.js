@@ -5,7 +5,6 @@ import Stats from "stats-js";
 import { Controls } from "./Controls";
 
 import { BlockFactory } from "./BlockFactory";
-import { InputHandler } from "./InputHandler";
 import { World } from "./World";
 import { Player } from "./Player";
 
