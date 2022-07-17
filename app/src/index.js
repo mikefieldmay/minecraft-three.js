@@ -2,8 +2,8 @@ import { Game } from "./components/Game";
 
 import "../css/style.css";
 
-window.onload = () => {
+window.onload = async () => {
   const game = new Game();
-  game.setup();
+  await game.setup();
   game.gameLoop();
 };

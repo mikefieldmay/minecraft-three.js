@@ -2,6 +2,7 @@ import { PointerLockControls } from "three/examples/jsm/controls/PointerLockCont
 import { identifyChunk } from "../utils/identifyChunk";
 import { createInstanceChunks } from "../utils/generateChunks";
 import { Block } from "./Block";
+import { InputHandler } from "./InputHandler";
 
 export class Controls {
   constructor(camera) {
@@ -13,104 +14,129 @@ export class Controls {
     this.jumpSpeed = 1.3;
     this.acc = 0.08;
     this.canJump = true;
-    this.canPlaceBlock = true;
     this.autoJump = true;
     this.controlOptions = {
       forward: "w",
       backward: "s",
       right: "d",
       left: "a",
-      jump: " ",
-      placeBlock: "q"
+      jump: " "
     };
+
+    this.inputHandler = null;
   }
 
   setup = () => {
     document.body.addEventListener("click", () => {
       this.controls.lock();
     });
-
-    window.addEventListener("keydown", (event) => {
-      this.keys.push(event.key);
-      if (event.key == this.controlOptions.jump && this.canJump) {
-        this.ySpeed = -this.jumpSpeed;
-        this.canJump = false;
+    this.inputHandler = new InputHandler([
+      {
+        label: "forward",
+        key: "w",
+        handleKeyPress: (chunks) => {
+          this.moveForwards(chunks);
+        }
+      },
+      {
+        label: "backward",
+        key: "s",
+        handleKeyPress: (chunks) => this.moveBack(chunks)
+      },
+      {
+        label: "right",
+        key: "d",
+        handleKeyPress: (chunks) => this.moveRight(chunks)
+      },
+      {
+        label: "left",
+        key: "a",
+        handleKeyPress: (chunks) => this.moveLeft(chunks)
+      },
+      {
+        label: "jump",
+        key: " ",
+        handleKeyPress: (chunks) => this.jump(chunks)
       }
-    });
-    window.addEventListener("keyup", (event) => {
-      this.keys = this.keys.filter((key) => key != event.key);
-    });
+    ]);
   };
 
-  update = (chunks, blockPlacedCallback) => {
-    if (this.keys.includes(this.controlOptions.forward)) {
-      this.controls.moveForward(this.movingSpeed);
-      chunks.forEach((items) => {
-        items.forEach((item) => {
-          if (!this.autoJump) {
-            if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
-              if (this.camera.position.y === item.y - item.height / 2) {
-                this.controls.moveForward(-1 * this.movingSpeed);
-              }
-            }
-          }
-        });
-      });
+  jump() {
+    if (this.canJump) {
+      this.ySpeed = -this.jumpSpeed;
+      this.canJump = false;
     }
-    if (this.keys.includes(this.controlOptions.left)) {
-      this.controls.moveRight(-1 * this.movingSpeed);
-      chunks.forEach((items) => {
-        items.forEach((item) => {
-          if (!this.autoJump) {
-            if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
-              if (this.camera.position.y === item.y - item.height / 2) {
-                this.controls.moveRight(this.movingSpeed);
-              }
-            }
-          }
-        });
-      });
-    }
-    if (this.keys.includes(this.controlOptions.backward)) {
-      this.controls.moveForward(-1 * this.movingSpeed);
-      chunks.forEach((items) => {
-        items.forEach((item) => {
-          if (!this.autoJump) {
-            if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
-              if (this.camera.position.y === item.y - item.height / 2) {
-                this.controls.moveForward(this.movingSpeed);
-              }
-            }
-          }
-        });
-      });
-    }
-    if (this.keys.includes(this.controlOptions.right)) {
-      this.controls.moveRight(this.movingSpeed);
-      chunks.forEach((items) => {
-        items.forEach((item) => {
-          if (!this.autoJump) {
-            if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
-              if (this.camera.position.y === item.y - item.height / 2) {
-                this.controls.moveRight(-1 * this.movingSpeed);
-              }
-            }
-          }
-        });
-      });
-    }
-    if (this.keys.includes(this.controlOptions.placeBlock)) {
-      if (this.canPlaceBlock) {
-        this.canPlaceBlock = false;
+  }
 
-        blockPlacedCallback();
-        setTimeout(() => {
-          this.canPlaceBlock = true;
-        }, 250);
-      }
-    }
+  moveForwards(chunks) {
+    this.controls.moveForward(this.movingSpeed);
+    chunks.forEach((items) => {
+      items.forEach((item) => {
+        if (!this.autoJump) {
+          if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
+            if (this.camera.position.y === item.y - item.height / 2) {
+              this.controls.moveForward(-1 * this.movingSpeed);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  moveBack(chunks) {
+    this.controls.moveForward(-1 * this.movingSpeed);
+    chunks.forEach((items) => {
+      items.forEach((item) => {
+        if (!this.autoJump) {
+          if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
+            if (this.camera.position.y === item.y - item.height / 2) {
+              this.controls.moveForward(this.movingSpeed);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  moveLeft(chunks) {
+    this.controls.moveRight(-1 * this.movingSpeed);
+    chunks.forEach((items) => {
+      items.forEach((item) => {
+        if (!this.autoJump) {
+          if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
+            if (this.camera.position.y === item.y - item.height / 2) {
+              this.controls.moveRight(this.movingSpeed);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  moveRight(chunks) {
+    console.log("hello");
+    this.controls.moveRight(this.movingSpeed);
+    chunks.forEach((items) => {
+      items.forEach((item) => {
+        if (!this.autoJump) {
+          if (this.hasCollidedX(item) && this.hasCollidedZ(item)) {
+            if (this.camera.position.y === item.y - item.height / 2) {
+              this.controls.moveRight(-1 * this.movingSpeed);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  fall() {
     this.camera.position.y -= this.ySpeed;
     this.ySpeed += this.acc;
+  }
+
+  update = (chunks, blockPlacedCallback) => {
+    this.inputHandler.update(chunks);
+    this.fall();
   };
 
   hasCollidedX = (item) => {

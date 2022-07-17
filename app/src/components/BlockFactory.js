@@ -269,6 +269,7 @@ export class BlockFactory {
     if (intersection[0] && intersection[0].distance < 40) {
       const materialIndex = intersection[0].face.materialIndex;
       const position = intersection[0].point;
+      console.log("POSITION", position);
       let x = 0;
       let y = 0;
       let z = 0;
@@ -310,6 +311,8 @@ export class BlockFactory {
           z = position.z - inc;
           break;
       }
+
+      console.log(x, y, z, "BLOCKS");
 
       const chunk =
         this.chunks[

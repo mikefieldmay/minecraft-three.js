@@ -39,9 +39,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: "./app/index.html",
       title: "Test"
+    }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: "app/assets", to: "public" }]
     })
-    // new CopyWebpackPlugin({
-    //   patterns: [{ from: "app/assets", to: "public" }]
-    // })
   ]
 };
