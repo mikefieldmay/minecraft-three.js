@@ -1,88 +1,29 @@
 import * as THREE from "three";
-import { noise } from "perlin";
-import Stats from "stats-js";
 
-import { Controls } from "./Controls";
-
-import { BlockFactory } from "./BlockFactory";
 import { InputHandler } from "./InputHandler";
-import { World } from "./World";
-import { Player } from "./Player";
 
-export class Game {
-  constructor() {
-    this.stats = new Stats();
-    this.scene = new THREE.Scene();
-    this.renderer = new THREE.WebGLRenderer();
-    this.camera = null;
-    this.controls = null;
-    this.loader = new THREE.TextureLoader();
-    this.blockBox = null;
+export class Player {
+  constructor(pointer, camera, blockFactory, scene) {
     this.raycaster = new THREE.Raycaster();
-    this.pointer = new THREE.Vector2();
-    this.plane = null;
-    this.placedBlocks = [];
-    this.chunkMaps = [];
-    this.intersection = null;
-    this.clock = new THREE.Clock();
+    this.pointer = pointer;
+    this.camera = camera;
+    this.blockFactory = blockFactory;
+    this.scene = scene;
     this.canPlaceBlock = true;
-    this.player = null;
 
-    this.blockFactory = new BlockFactory(this.scene);
-  }
-
-  async setup() {
-    noise.seed(Math.random());
-    this.stats.showPanel(0);
-    this.scene.background = new THREE.Color(0x00ffff);
-    this.scene.fog = new THREE.Fog(0x000000, 10, 500);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(this.renderer.domElement);
-    document.body.appendChild(this.stats.dom);
-
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-
-    this.pointer.x = 0.5 * 2 - 1;
-    this.pointer.x = -1 * 0.5 * 2 + 1;
-
-    this.controls = new Controls(this.camera);
-    this.controls.setup();
-    this.world = new World(this.camera, this.blockFactory, this.controls);
-    this.world.create();
-
-    this.player = new Player(
-      this.pointer,
-      this.camera,
-      this.blockFactory,
-      this.scene
-    );
-
-    window.addEventListener("resize", () => {
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-    });
-
-    const toggleButton = document.getElementById("auto-jump-toggle");
-    toggleButton.onclick = () => {
-      this.controls.autoJump = !this.controls.autoJump;
-    };
-    this.animate();
-  }
-
-  update() {
-    this.player.inputHandler.update();
-    this.controls.update(this.blockFactory.chunks);
-    this.world.checkCollisions();
+    this.inputHandler = new InputHandler([
+      {
+        label: "place",
+        key: "q",
+        handleKeyPress: (chunks) => {
+          this.handleBlockPlace(chunks);
+        }
+      }
+    ]);
   }
 
   render() {
-    this.player.render();
+    this.raycaster.setFromCamera(this.pointer, this.camera);
     this.intersection = this.raycaster.intersectObject(
       this.blockFactory.instancedChunk
     );
@@ -165,22 +106,15 @@ export class Game {
         this.plane.visible = false;
       }
     }
-    this.renderer.render(this.scene, this.camera);
   }
 
-  gameLoop() {
-    this.update();
-    this.render();
-    requestAnimationFrame(() => {
-      this.gameLoop();
-    });
-  }
-
-  animate() {
-    this.stats.begin();
-    this.stats.end();
-    requestAnimationFrame(() => {
-      this.animate();
-    });
+  handleBlockPlace() {
+    if (this.canPlaceBlock) {
+      this.canPlaceBlock = false;
+      this.blockFactory.handlePlaceBlock(this.intersection);
+      setTimeout(() => {
+        this.canPlaceBlock = true;
+      }, 250);
+    }
   }
 }
