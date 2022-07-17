@@ -10,7 +10,6 @@ import GrassTop from "../../assets/texture/grass/top.jpeg";
 import GrassSide from "../../assets/texture/grass/side.jpeg";
 
 import { Controls } from "./Controls";
-import { Dancer, Dancer as Model } from "./Model";
 import {
   lowestXBlock,
   lowestZBlock,
@@ -35,7 +34,6 @@ export class Game {
     this.placedBlocks = [];
     this.chunkMaps = [];
     this.intersection = null;
-    this.dancer = null;
     this.clock = new THREE.Clock();
     this.canPlaceBlock = true;
 
@@ -85,18 +83,6 @@ export class Game {
       ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) * 5
     );
 
-    this.dancer = new Dancer(
-      ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) *
-        5,
-      ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) *
-        5,
-      ((this.blockFactory.renderDistance * this.blockFactory.chunkSize) / 2) *
-        5 -
-        10,
-      this.scene,
-      this.camera
-    );
-
     this.inputHandler = new InputHandler([
       {
         label: "place",
@@ -117,23 +103,12 @@ export class Game {
     toggleButton.onclick = () => {
       // this.controls.autoJump = !this.controls.autoJump;
     };
-    await this.dancer.loadModel();
     this.animate();
   }
 
   checkCollisions() {
     this.blockFactory.chunks.forEach((blockArray) => {
       blockArray.forEach((item) => {
-        if (
-          this.dancer.ready &&
-          this.dancer.hasCollidedX(item) &&
-          this.dancer.hasCollidedZ(item)
-        ) {
-          if (this.dancer.hasCollidedY(item)) {
-            this.dancer.model.position.y = item.y + item.height / 2;
-            this.dancer.ySpeed = 0;
-          }
-        }
         if (
           this.controls.hasCollidedX(item) &&
           this.controls.hasCollidedZ(item)
@@ -152,12 +127,6 @@ export class Game {
   update() {
     this.inputHandler.update();
     this.controls.update(this.blockFactory.chunks);
-    if (this.dancer.ready) {
-      // this.dancer.updatePosition(0, this.dancer.model.x - 1, 0);
-      this.dancer.update(this.clock.getDelta());
-      this.dancer.moveCharacter("FALL");
-      // this.dancer.moveCharacter("FALL");
-    }
     this.checkCollisions();
   }
 
